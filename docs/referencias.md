@@ -1,0 +1,4 @@
+### 1. Riscos do Calor Extremo para a Saúde
+
+* **Organização Mundial da Saúde (OMS).** *Mudanças climáticas e saúde: ficha informativa.* Genebra: WHO, 2023. Disponível em: [https://www.who.int/news-room/fact-sheets/detail/climate-change-and-health](https://www.who.int/news-room/fact-sheets/detail/climate-change-and-health). Acesso em: 21 de junho de 2025.
+    * *Relevância:* Este documento da OMS detalha os diversos impactos negativos do calor excessivo na saúde humana, incluindo insolação, desidratação e o agravamento de doenças cardiovasculares e respiratórias, reforçando a necessidade de sistemas que auxiliem na tomada de decisão sobre a exposição ao calor.
