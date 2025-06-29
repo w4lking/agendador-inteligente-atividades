@@ -7,8 +7,8 @@ const app = express();
 const port = process.env.PORT || 3000; // Porta da API Principal
 
 // URLs dos Agentes (podem vir de variáveis de ambiente)
-const AGENT1_CLIMA_URL = process.env.AGENT1_CLIMA_URL || 'http://localhost:3001';
-const AGENT2_ATIVIDADES_URL = process.env.AGENT2_ATIVIDADES_URL || 'http://localhost:3002';
+const AGENT1_CLIMA_URL = process.env.AGENT1_CLIMA_URL || 'http://agent1-clima:3001'; // 'agent1-clima' é o nome do serviço no docker-compose.yml
+const AGENT2_ATIVIDADES_URL = process.env.AGENT2_ATIVIDADES_URL || 'http://agent2-atividades:3002'; // 'agent2-atividades' é o nome do serviço
 
 // Middleware para parsear JSON no corpo das requisições
 app.use(express.json());
