@@ -6,9 +6,9 @@ require('dotenv').config(); // Para carregar sua chave de API do Gemini
 const app = express();
 const port = process.env.PORT || 3002; // Porta do Agente 2
 
-// Inicializa a API Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" }); // ou "gemini-1.5-pro-latest" para mais capacidade (verifique limites)
+
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 app.use(express.json());
 
