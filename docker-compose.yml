@@ -4,38 +4,38 @@ version: '3.8' # Versão do Docker Compose
 services:
   # Serviço da API Principal (Orquestrador)
   api-principal:
-    build: ./src/api # Caminho para o Dockerfile da API Principal
+    build: ./src/api
     ports:
-      - "3000:3000" # Mapeia a porta 3000 do host para a porta 3000 do contêiner
-    environment: # Variáveis de ambiente para o contêiner da API Principal
-      # As URLs agora usam os nomes dos serviços definidos neste docker-compose.yml
-      # O Docker Compose cria uma rede interna onde os serviços podem se comunicar pelos seus nomes.
+      - "3000:3000"
+    environment:
       AGENT1_CLIMA_URL: http://agent1-clima:3001
       AGENT2_ATIVIDADES_URL: http://agent2-atividades:3002
       PORT: 3000
-    depends_on: # Define a ordem de inicialização (api-principal depende dos agentes)
+    depends_on:
       - agent1-clima
       - agent2-atividades
     volumes:
-      - ./src/api:/usr/src/app # Monta o código-fonte para facilitar o desenvolvimento (hot-reloading)
-                               # Remova em produção para builds mais limpos
+      - ./src/api:/usr/src/app
 
   # Serviço do Agente 1 (Previsor de Horários Climáticos Otimizados)
   agent1-clima:
-    build: ./src/agents/agent1_clima # Caminho para o Dockerfile do Agente 1
+    build: ./src/agents/agent1_clima
     ports:
-      - "3001:3001" # Mapeia a porta 3001 do host para a porta 3001 do contêiner
-    env_file: # Carrega variáveis de ambiente do arquivo .env do Agente 1
+      - "3001:3001"
+    env_file:
       - ./src/agents/agent1_clima/.env
     volumes:
-      - ./src/agents/agent1_clima:/usr/src/app # Monta o código-fonte para desenvolvimento
+      - ./src/agents/agent1_clima:/usr/src/app
 
   # Serviço do Agente 2 (Classificador de Atividades Recomendadas)
   agent2-atividades:
-    build: ./src/agents/agent2_atividades # Caminho para o Dockerfile do Agente 2
+    build: ./src/agents/agent2_atividades
     ports:
-      - "3002:3002" # Mapeia a porta 3002 do host para a porta 3002 do contêiner
-    env_file: # Carrega variáveis de ambiente do arquivo .env do Agente 2 (para GEMINI_API_KEY)
-      - ./src/agents/agent2_atividades/.env
+      - "3002:3002"
+    # ANTES: env_file: # REMOVA ESTA LINHA
+    # ANTES:   - ./src/agents/agent2_atividades/.env # REMOVA ESTA LINHA
+    environment: # ADICIONE ESTA SEÇÃO
+      GEMINI_API_KEY: AIzaSyAlDGK-uIF10Hxy8pZAJqaOqMX3He5T-2Y # <<< COLOQUE SUA CHAVE GEMINI AQUI DIRETAMENTE!
+      PORT: 3002
     volumes:
-      - ./src/agents/agent2_atividades:/usr/src/app # Monta o código-fonte para desenvolvimento
+      - ./src/agents/agent2_atividades:/usr/src/app

@@ -24,7 +24,7 @@ COPY . .
 # IMPORTANTE: Em ambientes de produção reais, chaves de API não devem ir no contêiner.
 # Devem ser passadas como segredos do orquestrador (Docker Swarm, Kubernetes) ou do ambiente.
 # Para este trabalho, copiar o .env é aceitável para demonstração.
-COPY .env .env
+# COPY .env .env
 
 # Expõe a porta em que a aplicação vai escutar dentro do contêiner.
 # Esta porta deve corresponder à porta definida no seu index.js (process.env.PORT ou 3002).
