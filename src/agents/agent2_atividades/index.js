@@ -1,71 +1,97 @@
 // src/agents/agent2_atividades/index.js
 const express = require('express');
-const app = express();
-const port = process.env.PORT || 3002; // Porta do Agente 2 (diferente do Agente 1)
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+require('dotenv').config(); // Para carregar sua chave de API do Gemini
 
-// Middleware para parsear JSON no corpo das requisições
+const app = express();
+const port = process.env.PORT || 3002; // Porta do Agente 2
+
+// Inicializa a API Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-pro" }); // ou "gemini-1.5-pro-latest" para mais capacidade (verifique limites)
+
 app.use(express.json());
 
 // Endpoint para classificar e recomendar atividades
-// Este endpoint esperará receber dados climáticos processados
-app.post('/recommend-activities', (req, res) => {
+app.post('/recommend-activities', async (req, res) => {
     const { temperature, weatherDescription, activityType } = req.body;
 
     if (temperature === undefined || !weatherDescription) {
         return res.status(400).json({ error: 'Temperatura e descrição do clima são obrigatórias.' });
     }
 
-    let recommendedActivities = [];
-    let justification = '';
+    try {
+        // Crie um prompt para a IA generativa
+        let prompt = `Como um especialista em atividades ao ar livre, considerando as seguintes condições climáticas:
+        - Temperatura: ${temperature}°C
+        - Condição do tempo: ${weatherDescription}
+        `;
 
-    // --- LÓGICA DE CLASSIFICAÇÃO DE ATIVIDADES (IA LEVE - Baseada em Regras) ---
-
-    // Condições de Calor Extremo
-    if (temperature >= 30) {
-        recommendedActivities.push('Natação', 'Exercícios leves em ambientes com ar condicionado', 'Hidroginástica');
-        justification = 'Devido à temperatura elevada, atividades aquáticas ou em ambientes climatizados são mais seguras.';
-    }
-    // Condições de Calor Moderado/Ideal
-    else if (temperature >= 18 && temperature < 30) {
-        if (weatherDescription.includes('chuva') || weatherDescription.includes('garoa') || weatherDescription.includes('trovoada')) {
-            recommendedActivities.push('Treino em academia', 'Yoga indoor', 'Caminhada em shopping/local coberto');
-            justification = 'Apesar da temperatura agradável, há previsão de chuva/garoa, sugerindo atividades em locais cobertos.';
-        } else if (weatherDescription.includes('ensolarado') || weatherDescription.includes('céu limpo')) {
-            recommendedActivities.push('Caminhada ao ar livre', 'Corrida em parques', 'Ciclismo', 'Piquenique');
-            justification = 'Tempo ensolarado e temperatura agradável são ideais para atividades ao ar livre.';
-        } else {
-            // Nublado, etc.
-            recommendedActivities.push('Caminhada', 'Ciclismo leve', 'Leitura em parque');
-            justification = 'Condições moderadas, bom para atividades tranquilas ao ar livre.';
+        if (activityType) {
+            prompt += `- Atividade preferida pelo usuário: ${activityType}\n`;
         }
-    }
-    // Condições de Frio
-    else if (temperature < 18) {
-        recommendedActivities.push('Caminhada vigorosa', 'Corrida', 'Esportes coletivos (futebol, basquete)', 'Academia');
-        justification = 'Temperaturas mais baixas são boas para atividades que geram calor corporal ou em ambientes fechados.';
-    }
-    // --- FIM DA LÓGICA DE CLASSIFICAÇÃO ---
 
-    // Adiciona uma sugestão baseada no tipo de atividade desejada (se fornecida)
-    if (activityType) {
-        const lowerActivityType = activityType.toLowerCase();
-        if (recommendedActivities.includes(lowerActivityType) || recommendedActivities.some(a => a.toLowerCase().includes(lowerActivityType))) {
-            // Se já está na lista ou similar
-        } else if (lowerActivityType.includes('caminhada') || lowerActivityType.includes('corrida')) {
-            if (temperature < 10) recommendedActivities.unshift('Agasalhe-se bem para caminhada/corrida!');
-            else if (temperature > 28) recommendedActivities.unshift('Evite o pico do sol para caminhada/corrida!');
+        prompt += `
+        Sugira 3-5 atividades ao ar livre mais adequadas para essas condições.
+        Para cada atividade, forneça uma breve justificativa de por que ela é adequada.
+        Se as condições forem ruins para atividades ao ar livre (ex: chuva forte, temperatura extrema), sugira atividades alternativas em locais cobertos ou forneça um aviso.
+        Formato da resposta: uma lista numerada de atividades e justificativas.`;
+
+        console.log('Agente 2: Enviando prompt para Gemini:', prompt);
+
+        // Faz a chamada para a API Gemini
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        console.log('Agente 2: Resposta do Gemini:', text);
+
+        // Opcional: tentar parsear o texto gerado em uma lista estruturada
+        let recommendedActivitiesParsed = [];
+        let rawRecommendationText = text;
+
+        try {
+            // Tenta extrair as atividades e justificativas do texto gerado
+            // Isso pode ser complexo e exigir refinamento do prompt ou do parsing
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            lines.forEach(line => {
+                const match = line.match(/^\d+\.\s*(.+?):?\s*(.+)$/);
+                if (match) {
+                    recommendedActivitiesParsed.push({
+                        activity: match[1].trim(),
+                        justification: match[2] ? match[2].trim() : ''
+                    });
+                } else {
+                    // Se não conseguir parsear, adicione como uma linha de texto simples
+                    recommendedActivitiesParsed.push({ activity: line.trim(), justification: '' });
+                }
+            });
+            if (recommendedActivitiesParsed.length === 0 && text.length > 0) {
+                 // Se o parsing falhou completamente mas há texto, coloque tudo como uma atividade
+                 recommendedActivitiesParsed.push({ activity: text, justification: 'Gerado pela IA' });
+            }
+        } catch (parseError) {
+            console.warn('Agente 2: Erro ao parsear resposta do Gemini, usando texto bruto.', parseError);
+            recommendedActivitiesParsed = [{ activity: text, justification: 'Não foi possível estruturar a resposta da IA.' }];
         }
-    }
 
-    res.json({
-        message: 'Atividades recomendadas com base nas condições climáticas:',
-        temperature: temperature,
-        weatherDescription: weatherDescription,
-        recommendedActivities: recommendedActivities.length > 0 ? recommendedActivities : ['Não foi possível encontrar atividades ideais para as condições dadas.'] ,
-        justification: justification
-    });
+        res.json({
+            message: 'Atividades recomendadas com base em IA generativa e condições climáticas:',
+            temperature: temperature,
+            weatherDescription: weatherDescription,
+            // Retorna o texto bruto gerado pela IA, ou tenta retornar o parsed
+            recommendedActivities: recommendedActivitiesParsed.length > 0 ? recommendedActivitiesParsed : [{activity: rawRecommendationText, justification: 'Resposta da IA não estruturada.'}]
+        });
+
+    } catch (error) {
+        console.error('Agente 2: Erro ao chamar a API Gemini ou processar:', error.message);
+        res.status(500).json({
+            error: 'Não foi possível gerar recomendações de atividades. Erro na IA generativa.',
+            details: error.message
+        });
+    }
 });
 
 app.listen(port, () => {
-    console.log(`Agente 2 (Atividades) rodando na porta ${port}`);
+    console.log(`Agente 2 (Atividades - com Gemini IA) rodando na porta ${port}`);
 });
