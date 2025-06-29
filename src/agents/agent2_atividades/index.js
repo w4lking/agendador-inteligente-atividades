@@ -3,20 +3,12 @@ const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config(); // Para carregar sua chave de API do Gemini
 
-// ADICIONE ESTA LINHA PARA DEPURAR A CHAVE GEMINI
-console.log('Agente 2: Chave Gemini carregada (primeiros 5 e últimos 5 caracteres):',
-    process.env.GEMINI_API_KEY ?
-    `${process.env.GEMINI_API_KEY.substring(0, 5)}...${process.env.GEMINI_API_KEY.substring(process.env.GEMINI_API_KEY.length - 5)}` :
-    'UNDEFINED/VAZIA'
-);
-
 const app = express();
 const port = process.env.PORT || 3002; // Porta do Agente 2
 
-// src/agents/agent2_atividades/index.js
-// ...
+// Inicializa a API Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-pro" }); // ou "gemini-1.5-pro-latest" para mais capacidade (verifique limites)
 
 app.use(express.json());
 

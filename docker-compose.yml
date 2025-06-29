@@ -4,40 +4,39 @@ version: '3.8'
 services:
   # Serviço da API Principal (Orquestrador)
   api-principal:
-    build: ./src/api
+    build: ./src/api # Caminho para o Dockerfile da API Principal
     ports:
       - "3000:3000"
     environment:
-      # Referencia as variáveis do .env da raiz do projeto
       AGENT1_CLIMA_URL: http://agent1-clima:3001
       AGENT2_ATIVIDADES_URL: http://agent2-atividades:3002
       PORT: 3000
-    depends_on:
+    depends_on: # Define a ordem de inicialização (api-principal depende dos agentes)
       - agent1-clima
       - agent2-atividades
     volumes:
-      - ./src/api:/usr/src/app
+      - ./src/api:/usr/src/app # Monta o código-fonte para facilitar o desenvolvimento (hot-reloading)
+                               # Remova em produção para builds mais limpos
 
   # Serviço do Agente 1 (Previsor de Horários Climáticos Otimizados)
   agent1-clima:
-    build: ./src/agents/agent1_clima
+    build: ./src/agents/agent1_clima # Caminho para o Dockerfile do Agente 1
     ports:
       - "3001:3001"
-    # Não precisa de env_file aqui se a chave OpenWeather for global
-    # ou você pode usar 'environment' e referenciar ${OPENWEATHER_API_KEY}
-    environment: # Usaremos environment aqui também para consistência
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY} # Referencia a chave do .env da raiz
-      PORT: 3001
+    env_file:
+      - ./src/agents/agent1_clima/.env
     volumes:
-      - ./src/agents/agent1_clima:/usr/src/app
+      - ./src/agents/agent1_clima:/usr/src/app # Monta o código-fonte para desenvolvimento
 
   # Serviço do Agente 2 (Classificador de Atividades Recomendadas)
   agent2-atividades:
-    build: ./src/agents/agent2_atividades
+    build: ./src/agents/agent2_atividades # Caminho para o Dockerfile do Agente 2
     ports:
       - "3002:3002"
-    environment: # Agora puxamos a chave do .env da raiz
-      GEMINI_API_KEY: ${GEMINI_API_KEY} # Referencia a chave do .env da raiz
+    # ANTES: env_file: # REMOVA ESTA LINHA
+    # ANTES:   - ./src/agents/agent2_atividades/.env # REMOVA ESTA LINHA
+    environment: # ADICIONE ESTA SEÇÃO
+      GEMINI_API_KEY: AIzaSyAlDGK-uIF10Hxy8pZAJqaOqMX3He5T-2Y # <<< COLOQUE SUA CHAVE GEMINI AQUI DIRETAMENTE!
       PORT: 3002
     volumes:
-      - ./src/agents/agent2_atividades:/usr/src/app
+      - ./src/agents/agent2_atividades:/usr/src/app # Monta o código-fonte para desenvolvimento
