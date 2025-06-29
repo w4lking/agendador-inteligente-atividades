@@ -1,5 +1,5 @@
 # docker-compose.yml
-version: '3.8' # Versão do Docker Compose
+version: '3.8'
 
 services:
   # Serviço da API Principal (Orquestrador)
@@ -8,6 +8,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # Referencia as variáveis do .env da raiz do projeto
       AGENT1_CLIMA_URL: http://agent1-clima:3001
       AGENT2_ATIVIDADES_URL: http://agent2-atividades:3002
       PORT: 3000
@@ -22,8 +23,11 @@ services:
     build: ./src/agents/agent1_clima
     ports:
       - "3001:3001"
-    env_file:
-      - ./src/agents/agent1_clima/.env
+    # Não precisa de env_file aqui se a chave OpenWeather for global
+    # ou você pode usar 'environment' e referenciar ${OPENWEATHER_API_KEY}
+    environment: # Usaremos environment aqui também para consistência
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY} # Referencia a chave do .env da raiz
+      PORT: 3001
     volumes:
       - ./src/agents/agent1_clima:/usr/src/app
 
@@ -32,10 +36,8 @@ services:
     build: ./src/agents/agent2_atividades
     ports:
       - "3002:3002"
-    # ANTES: env_file: # REMOVA ESTA LINHA
-    # ANTES:   - ./src/agents/agent2_atividades/.env # REMOVA ESTA LINHA
-    environment: # ADICIONE ESTA SEÇÃO
-      GEMINI_API_KEY: AIzaSyAlDGK-uIF10Hxy8pZAJqaOqMX3He5T-2Y # <<< COLOQUE SUA CHAVE GEMINI AQUI DIRETAMENTE!
+    environment: # Agora puxamos a chave do .env da raiz
+      GEMINI_API_KEY: ${GEMINI_API_KEY} # Referencia a chave do .env da raiz
       PORT: 3002
     volumes:
       - ./src/agents/agent2_atividades:/usr/src/app
