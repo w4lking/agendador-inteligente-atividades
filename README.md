@@ -1,3 +1,8 @@
+## Integrantes
+Professor: André de Lima Salgado e Bruno
+
+Alunos: Alexsander Davi Layon Walker, Marcos Vinícius Matias e Ruan Victor Henrique
+
 ### Descrição do Problema: Os Riscos das Atividades ao Ar Livre em um Clima em Mudança
 
 #### Contexto
