@@ -44,6 +44,39 @@ Ao oferecer uma ferramenta que integre previsões climáticas locais com recomen
 * **Incentivar a adoção de estilos de vida mais ativos e saudáveis**, respeitando as limitações ambientais.
 
 ---
+# 🚀 Como utilizar a aplicação?
+
+Este documento contém os requisitos e comandos necessários para executar a aplicação.
+
+---
+
+## ✅ Requisitos da Aplicação
+
+Para rodar este projeto, você precisará ter o seguinte instalado e configurado:
+
+* Docker
+* Docker Compose
+* Docker Desktop
+* API da OpenWeather
+* API do Gemini
+
+---
+
+## ⚙️ Comandos para Rodar
+
+Utilize os seguintes comandos no seu terminal para iniciar e gerenciar a aplicação.
+
+#### Iniciar a aplicação em segundo plano:
+```bash
+docker compose up -d
+```
+
+## 🌐 Acesso à Aplicação
+
+Após iniciar os contêineres, a aplicação estará disponível no seguinte endereço:
+
+**`127.0.0.1:5500`**
+
 
 ### Referências
 
