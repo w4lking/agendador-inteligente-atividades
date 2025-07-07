@@ -1,3 +1,4 @@
+// src/agents/agent1_clima/index.js
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
@@ -6,6 +7,15 @@ const app = express();
 const port = process.env.PORT || 3001; // Porta para o Agente 1
 
 app.use(express.json());
+
+// Função AUX para formatar a data de AAAA-MM-DD para DD/MM/AAAA e mandar pro front
+function formatDateToDDMMYYYY(dateString) {
+    if (!dateString || typeof dateString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString; // Retorna a string original se não for um formato esperado
+    }
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+}
 
 app.post('/predict-optimal-hours', async (req, res) => {
     const { city, date } = req.body; // Espera receber a cidade e data (YYYY-MM-DD)
@@ -27,38 +37,32 @@ app.post('/predict-optimal-hours', async (req, res) => {
         });
 
         const weatherData = weatherResponse.data;
-        const allForecasts = weatherData.list; // Todas as previsões disponíveis (5 dias / 3 em 3h)
+        const allForecasts = weatherData.list;
 
-        // Função auxiliar para calcular uma "pontuação de otimalidade"
         const calculateOptimalityScore = (temp, description) => {
             let score = 0;
-            // Quanto mais perto de 23°C, melhor
-            score += 100 - Math.abs(temp - 23); // Max 100 (se for 23°C)
+            score += 100 - Math.abs(temp - 23);
 
-            // Condições climáticas ideais adicionam pontos
             if (description.includes('céu limpo') || description.includes('poucas nuvens')) {
                 score += 50;
             } else if (description.includes('nuvens dispersas') || description.includes('nublado')) {
                 score += 20;
             }
 
-            // Condições ruins subtraem pontos significativamente
             if (description.includes('chuva') || description.includes('garoa') || description.includes('trovoada')) {
-                score -= 200; // Penalidade alta para chuva
+                score -= 200;
             }
 
-            // Exemplo: penalidade para temperaturas extremas fora da faixa
             if (temp < 10 || temp > 35) {
-                score -= 100; // Penalidade por estar muito frio ou muito quente
+                score -= 100;
             }
 
-            return Math.max(0, score); // Garante que a pontuação mínima é 0
+            return Math.max(0, score);
         };
 
-        // --- Lógica para encontrar horários ótimos para a DATA ESPECÍFICA ---
         let optimalHoursToday = [];
         const requestedDateForecasts = allForecasts.filter(item =>
-            item.dt_txt.startsWith(date) // Filtra para a data solicitada
+            item.dt_txt.startsWith(date)
         );
 
         requestedDateForecasts.forEach(item => {
@@ -67,39 +71,32 @@ app.post('/predict-optimal-hours', async (req, res) => {
             const weatherDescription = item.weather[0].description;
             const score = calculateOptimalityScore(temp, weatherDescription);
 
-            // Condições mínimas para ser considerado "ótimo"
-            // Podemos ser menos restritivos aqui, pois o score já filtra
             if (temp >= 15 && temp <= 30 && !weatherDescription.includes('chuva') && !weatherDescription.includes('garoa') && !weatherDescription.includes('trovoada')) {
                  optimalHoursToday.push({
                     time: `${hour}:00`,
                     temperature: temp,
                     description: weatherDescription,
                     full_datetime: item.dt_txt,
-                    optimalityScore: score // Inclui a pontuação
+                    optimalityScore: score
                 });
             }
         });
 
-        // Ordena os horários ótimos pela pontuação (do melhor para o pior)
         optimalHoursToday.sort((a, b) => b.optimalityScore - a.optimalityScore);
 
-        // --- Se não encontrou horários ótimos para a data solicitada, busca em datas futuras ---
         let recommendedFutureDates = [];
         if (optimalHoursToday.length === 0) {
             const now = new Date();
             const requestedDateTime = new Date(date);
 
-            // Evita buscar no passado ou no dia atual se já passou
-            let startCheckingDate = new Date(requestedDateTime.getTime() + (24 * 60 * 60 * 1000)); // Começa a verificar do dia seguinte ao solicitado
-            if (startCheckingDate.getTime() < now.getTime()) { // Se a data solicitada já passou, começa do próximo dia útil ou do dia atual
+            let startCheckingDate = new Date(requestedDateTime.getTime() + (24 * 60 * 60 * 1000));
+            if (startCheckingDate.getTime() < now.getTime()) {
                  startCheckingDate = new Date(now.getTime() + (24 * 60 * 60 * 1000));
-                 // Se o dia atual já passou (após certa hora), pode-se começar a buscar do próximo dia
             }
 
-
-            for (let i = 0; i < 5; i++) { // Verifica os próximos 5 dias a partir de 'startCheckingDate'
+            for (let i = 0; i < 5; i++) {
                 const checkDate = new Date(startCheckingDate.getTime() + (i * 24 * 60 * 60 * 1000));
-                const formattedCheckDate = checkDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                const formattedCheckDate = checkDate.toISOString().split('T')[0];
 
                 const futureDateOptimalHours = [];
                 const futureForecasts = allForecasts.filter(item => item.dt_txt.startsWith(formattedCheckDate));
@@ -125,32 +122,32 @@ app.post('/predict-optimal-hours', async (req, res) => {
                     futureDateOptimalHours.sort((a, b) => b.optimalityScore - a.optimalityScore);
                     recommendedFutureDates.push({
                         date: formattedCheckDate,
-                        bestHour: futureDateOptimalHours[0] // Pega o melhor horário desse dia
+                        bestHour: futureDateOptimalHours[0]
                     });
-                    // Opcional: Quebrar aqui se quiser apenas a primeira data futura com horários ótimos
-                    // break;
                 }
             }
         }
 
-
         // --- Resposta Final ---
+        // Aplica a formatação da data nas mensagens antes de enviar para o frontend
+        const formattedRequestedDate = formatDateToDDMMYYYY(date);
+
         if (optimalHoursToday.length > 0) {
             res.json({
-                message: `Horários ótimos para atividades ao ar livre em ${city} em ${date}:`,
+                message: `Horários ótimos para atividades ao ar livre em ${city} em ${formattedRequestedDate}:`,
                 optimalHours: optimalHoursToday,
-                recommendedFutureDates: recommendedFutureDates // Inclui futuras datas se tiver buscado
+                recommendedFutureDates: recommendedFutureDates
             });
         } else if (recommendedFutureDates.length > 0) {
              res.json({
-                message: `Não foram encontrados horários ótimos para ${city} em ${date}. No entanto, encontramos opções nos próximos dias:`,
-                optimalHours: [], // Array vazio para a data solicitada
-                recommendedFutureDates: recommendedFutureDates // Lista de sugestões futuras
+                message: `Não foram encontrados horários ótimos para ${city} em ${formattedRequestedDate}. No entanto, encontramos opções nos próximos dias:`,
+                optimalHours: [],
+                recommendedFutureDates: recommendedFutureDates
             });
         }
         else {
             res.json({
-                message: `Nenhum horário ótimo encontrado com base nos critérios para ${city} na data ${date} ou nos próximos dias. Considere outras opções.`,
+                message: `Nenhum horário ótimo encontrado com base nos critérios para ${city} na data ${formattedRequestedDate} ou nos próximos dias. Considere outras opções.`,
                 optimalHours: [],
                 recommendedFutureDates: []
             });
