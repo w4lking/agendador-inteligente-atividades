@@ -1,7 +1,7 @@
 ## Integrantes
-Professor: André de Lima Salgado e Bruno
+Professor: André de Lima Salgado e Bruno da Silva Macedo
 
-Alunos: Alexsander Davi Layon Walker, Marcos Vinícius Matias e Ruan Victor Henrique
+Alunos: Alexsander Davi, Layon Walker, Marcos Vinícius Matias e Ruan Victor Henrique
 
 ### Descrição do Problema: Os Riscos das Atividades ao Ar Livre em um Clima em Mudança
 

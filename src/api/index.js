@@ -18,14 +18,13 @@ app.use(express.json());
 
 // Endpoint principal para o agendamento inteligente
 app.post('/schedule-activity', async (req, res) => {
-    const { city, date, preferredActivity } = req.body; // preferredActivity é opcional
+    const { city, date, preferredActivity } = req.body;
 
     if (!city || !date) {
         return res.status(400).json({ error: 'Cidade e data são obrigatórias.' });
     }
 
     try {
-        // 1. Chamar o Agente 1 (Clima)
         console.log(`API Principal: Chamando Agente 1 (Clima) para ${city} em ${date}`);
         const climaResponse = await axios.post(`${AGENT1_CLIMA_URL}/predict-optimal-hours`, { city, date });
         const { optimalHours: optimalHoursToday, recommendedFutureDates, message: climaMessage } = climaResponse.data;
@@ -112,7 +111,6 @@ app.post('/schedule-activity', async (req, res) => {
         console.error('API Principal: Erro na orquestração da requisição:', error.message);
         if (error.response) {
             console.error('API Principal: Dados do erro da resposta:', error.response.data);
-            // Tenta pegar o status e a mensagem de erro do serviço interno
             res.status(error.response.status || 500).json({
                 status: 'error',
                 message: 'Erro na comunicação com um dos serviços internos.',
@@ -127,7 +125,6 @@ app.post('/schedule-activity', async (req, res) => {
     }
 });
 
-// Endpoint de teste simples
 app.get('/status', (req, res) => {
     res.json({ status: 'API Principal Online!' });
 });
