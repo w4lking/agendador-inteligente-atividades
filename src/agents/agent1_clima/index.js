@@ -162,4 +162,3 @@ app.post('/predict-optimal-hours', async (req, res) => {
 app.listen(port, () => {
     console.log(`Agente 1 (Clima) rodando na porta ${port}`);
 });
-
