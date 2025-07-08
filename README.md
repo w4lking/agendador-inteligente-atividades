@@ -62,6 +62,25 @@ Para rodar este projeto, você precisará ter o seguinte instalado e configurado
 
 ---
 
+## ✅ OBS:
+* É necessário criar um .env no diretório raiz do projeto 
+
+* # .env (na raiz do projeto, ao lado do docker-compose.yml)
+GEMINI_API_KEY=suaChave
+OPENWEATHER_API_KEY=suaChave
+
+* # .env (na pasta Api)
+PORT=3000
+AGENT1_CLIMA_URL=http://localhost:3001
+AGENT2_ATIVIDADES_URL=http://localhost:3002
+
+* # .env (na pasta agent1)
+OPENWEATHER_API_KEY=suaChave
+
+* # .env (na pasta agent2)
+Suachave
+PORT=3002
+
 ## ⚙️ Comandos para Rodar
 
 Utilize os seguintes comandos no seu terminal para iniciar e gerenciar a aplicação.
